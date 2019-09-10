@@ -223,8 +223,7 @@ class IndexDBStorage {
             let values = await this.tinyIndexDB.readData(tableName, [name]);
             let value0 = values[0];
             return value0 && value0.data;
-        }
-        catch (e) {
+        } catch (e) {
             if (e) {
                 console.log(e);
             }
@@ -268,23 +267,23 @@ class IndexedDBCachedFetch {
         this.indexDbStorage = new SimpleIndexDBStorage(dbName, tableName)
     }
 
-    fetchJson(url) {
-        return this.fetch(url, 'json');
+    fetchJson(url, converter) {
+        return this.fetch(url, 'json', converter);
     }
 
-    fetchArrayBuffer(url) {
-        return this.fetch(url, 'arrayBuffer');
+    fetchArrayBuffer(url, converter) {
+        return this.fetch(url, 'arrayBuffer', converter);
     }
 
-    fetchBlob(url) {
-        return this.fetch(url, 'blob');
+    fetchBlob(url, converter) {
+        return this.fetch(url, 'blob', converter);
     }
 
-    fetchText(url) {
-        return this.fetch(url, 'text');
+    fetchText(url, converter) {
+        return this.fetch(url, 'text', converter);
     }
 
-    async fetch(url, responseType) {
+    async fetch(url, responseType, converter) {
         let cached = await this.indexDbStorage.getItem(url);
         if (!cached) {
             let fetchd = await fetch(url);
@@ -300,6 +299,11 @@ class IndexedDBCachedFetch {
                 cached = null;
                 console.error("responseType error")
             }
+
+            if (converter) {
+                cached = await converter(cached);
+            }
+
             await this.indexDbStorage.saveItem(url, cached);
         }
         return cached;
@@ -308,6 +312,7 @@ class IndexedDBCachedFetch {
 
 
 export {
+    SimpleIndexDBStorage as default,
     IndexedDBCachedFetch,
     SimpleIndexDBStorage,
     IndexDBStorage,
