@@ -1,6 +1,6 @@
 {
   "name": "indexeddb-keyvalue",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "Lightweight IndexedDB wrapper with table management, CRUD operations, and HTTP request caching",
   "main": "dist/index.js",
   "types": "index.d.ts",
