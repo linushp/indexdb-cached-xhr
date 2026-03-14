@@ -17,11 +17,11 @@ export interface TableCallback<T> {
 
 export declare class TinyIndexDB {
   dbName: string;
-  dbV: number | undefined;
+  dbV: number;
   keyPath: string;
   tablesConfig: TableConfig | null;
 
-  constructor(dbName: string, keyPath: string, dbV?: number);
+  constructor(dbName: string, keyPath: string);
 
   /**
    * 初始化数据库，自动创建缺失的表
@@ -71,41 +71,10 @@ export declare class TinyIndexDB {
 }
 
 // ============================================
-// IndexDBStorageFactory - 工厂模式
+// IndexedDbStorage - 单表存储封装
 // ============================================
 
-export declare class IndexDBStorageFactory {
-  /**
-   * 获取或创建 storage 实例（全局缓存）
-   * @param dbName - 数据库名
-   * @param tableName - 表名
-   */
-  static getStorage(dbName: string, tableName: string): IndexDBStorage;
-
-  /**
-   * 获取或创建 TinyIndexDB 实例（全局缓存）
-   * @param dbName - 数据库名
-   */
-  static getTinyIndexDB(dbName: string): TinyIndexDB;
-
-  /**
-   * 清除指定缓存
-   * @param dbName - 数据库名
-   * @param tableName - 表名（可选，不传则清除整个数据库缓存）
-   */
-  static clearCache(dbName: string, tableName?: string): void;
-
-  /**
-   * 清除所有缓存
-   */
-  static clearAllCache(): void;
-}
-
-// ============================================
-// IndexDBStorage - 单表存储封装
-// ============================================
-
-export declare class IndexDBStorage {
+export declare class IndexedDbStorage {
   dbName: string;
   tableName: string;
   tinyIndexDB: TinyIndexDB;
@@ -149,46 +118,87 @@ export declare class IndexDBStorage {
 }
 
 // ============================================
-// SimpleIndexDBStorage - 简化版单表存储
+// StorageFactory - 工厂模式
 // ============================================
 
-export declare class SimpleIndexDBStorage {
+export declare class StorageFactory {
+  /**
+   * 获取或创建 storage 实例（全局缓存）
+   * @param dbName - 数据库名
+   * @param tableName - 表名
+   */
+  static getStorage(dbName: string, tableName: string): IndexedDbStorage;
+
+  /**
+   * 获取或创建 TinyIndexDB 实例（全局缓存）
+   * @param dbName - 数据库名
+   */
+  static getTinyIndexDB(dbName: string): TinyIndexDB;
+
+  /**
+   * 清除指定缓存
+   * @param dbName - 数据库名
+   * @param tableName - 表名（可选，不传则清除整个数据库缓存）
+   */
+  static clearCache(dbName: string, tableName?: string): void;
+
+  /**
+   * 清除所有缓存
+   */
+  static clearAllCache(): void;
+}
+
+// ============================================
+// CachedStorage - 带内存缓存的单表存储
+// ============================================
+
+export declare class CachedStorage {
   dbName: string;
   tableName: string;
 
   constructor(dbName?: string, tableName?: string);
 
   /**
-   * 保存条目
+   * 保存条目（同时更新内存和 IndexedDB）
    */
   saveItem(name: string, data: any): Promise<void>;
 
   /**
-   * 获取条目
+   * 获取条目（优先从内存读取）
    */
   getItem(name: string): Promise<any>;
 
   /**
-   * 删除条目
+   * 删除条目（同时删除内存和 IndexedDB）
    */
   deleteItem(name: string): Promise<void>;
 
   /**
-   * 清空表
+   * 清空表（同时清空内存和 IndexedDB）
    */
   clear(): Promise<void>;
+
+  /**
+   * 清空内存缓存（不影响 IndexedDB）
+   */
+  clearMemoryCache(): void;
+
+  /**
+   * 获取内存缓存条目数
+   */
+  getMemoryCacheSize(): number;
 }
 
 // ============================================
-// IndexedDBCachedFetch - 缓存 Fetch
+// CachedFetch - 缓存 Fetch
 // ============================================
 
 export type ResponseType = 'json' | 'text' | 'arrayBuffer' | 'blob';
 
 export type Converter<T> = (data: any) => T | Promise<T>;
 
-export declare class IndexedDBCachedFetch {
-  indexDbStorage: SimpleIndexDBStorage;
+export declare class CachedFetch {
+  cachedStorage: CachedStorage;
 
   constructor(dbName: string, tableName: string);
 
@@ -233,4 +243,4 @@ export declare class IndexedDBCachedFetch {
 // 默认导出
 // ============================================
 
-export default SimpleIndexDBStorage;
+export default CachedStorage;

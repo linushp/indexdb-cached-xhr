@@ -1,212 +1,213 @@
-# indexeddb-keyvalue
+# indexdb-cached-xhr
 
-轻量级 IndexedDB 封装库，提供表管理、CRUD 操作和 HTTP 请求缓存功能。
+A lightweight IndexedDB wrapper with dual-layer caching (Memory + IndexedDB), table management, CRUD operations, and HTTP request caching.
 
-## 特性
+## Features
 
-- **双层缓存架构** - **内存 + IndexedDB**，重复读取直接从内存返回，性能提升 100-500 倍
-- 自动版本管理 - 无需手动处理数据库升级
-- 自动表创建 - 使用不存在的表时自动创建
-- 工厂模式 - 全局缓存实例，避免重复创建连接
-- Promise API - 全异步操作，支持 async/await
-- HTTP 缓存 - 自动缓存 fetch 请求结果
-- TypeScript 支持 - 完整的类型定义文件
-- 零依赖 - 轻量级，无外部依赖
+- **Dual-Layer Caching** - **Memory + IndexedDB**, subsequent reads return directly from memory, 100-500x performance boost
+- **Ultra Small Bundle** - Only ~3KB gzipped, extremely lightweight
+- Automatic Version Management - No manual database upgrades needed
+- Automatic Table Creation - Tables are created automatically when used
+- Factory Pattern - Global instance caching, avoids duplicate connections
+- Promise API - Fully asynchronous, supports async/await
+- HTTP Caching - Automatically cache fetch request results
+- TypeScript Support - Complete type definitions
+- Zero Dependencies - No external dependencies
 
-## 性能对比
+## Performance Comparison
 
-| 操作 | 纯 IndexedDB | indexeddb-keyvalue (内存缓存) | 性能提升 |
-|------|-------------|------------------------------|---------|
-| 首次读取 | ~1-5ms | ~1-5ms | 持平 |
-| 重复读取 | ~1-5ms | **~0.01ms** | **100-500 倍** |
-| 写入 | ~2-8ms | ~2-8ms (内存+持久化) | 可靠持久化 |
+| Operation | Pure IndexedDB | indexdb-cached-xhr (Memory Cache) | Performance Boost |
+|-----------|---------------|----------------------------------|-------------------|
+| First Read | ~1-5ms | ~1-5ms | Same |
+| Subsequent Reads | ~1-5ms | **~0.01ms** | **100-500x** |
+| Write | ~2-8ms | ~2-8ms (Memory + Persistence) | Reliable persistence |
 
-> 基于 Chrome/Edge 浏览器测试，实际性能因数据大小和设备而异。SimpleIndexDBStorage 会自动将读取过的数据缓存到内存，后续访问几乎无延迟。
+> Based on Chrome/Edge browser testing, actual performance varies by data size and device. SimpleIndexDBStorage automatically caches read data to memory, making subsequent access nearly instant.
 
-## 安装
+## Installation
 
 ```bash
-npm install indexeddb-keyvalue
+npm install indexdb-cached-xhr
 ```
 
-## 使用方式
+## Usage
 
-### 方式一：SimpleIndexDBStorage（推荐）
+### Option 1: CachedStorage (Recommended)
 
-最简单的使用方式，**自带内存缓存**，一行代码搞定高性能数据存储：
+The simplest way to use it, with **built-in memory caching**, one line for high-performance data storage:
 
 ```javascript
-import { SimpleIndexDBStorage } from 'indexeddb-keyvalue';
+import { CachedStorage } from 'indexdb-cached-xhr';
 
-// 创建存储实例（自带内存缓存 + IndexedDB 双层存储）
-const storage = new SimpleIndexDBStorage('myDB', 'myTable');
+// Create storage instance (with dual-layer Memory + IndexedDB caching)
+const storage = new CachedStorage('myDB', 'myTable');
 
-// 保存数据（同时写入内存和 IndexedDB）
-await storage.saveItem('user1', { name: '张三', age: 25 });
+// Save data (writes to both memory and IndexedDB)
+await storage.saveItem('user1', { name: 'John', age: 25 });
 
-// 第一次读取 - 从 IndexedDB 加载并缓存到内存
+// First read - loads from IndexedDB and caches to memory
 const user1 = await storage.getItem('user1');
 
-// 第二次读取 - 直接从内存返回，性能提升 10 倍以上！
-const user2 = await storage.getItem('user1'); // ⚡ 超快，几乎无延迟
+// Second read - returns directly from memory, 100x+ faster!
+const user2 = await storage.getItem('user1'); // ⚡ Lightning fast, almost no delay
 
-// 查看内存缓存状态
-console.log('内存缓存条目数:', storage.getMemoryCacheSize());
+// Check memory cache status
+console.log('Memory cache entries:', storage.getMemoryCacheSize());
 
-// 删除数据（同时删除内存和 IndexedDB）
+// Delete data (removes from both memory and IndexedDB)
 await storage.deleteItem('user1');
 
-// 清空表（同时清空内存和 IndexedDB）
+// Clear table (clears both memory and IndexedDB)
 await storage.clear();
 
-// 仅清空内存缓存（保留 IndexedDB 数据）
+// Clear only memory cache (keeps IndexedDB data)
 storage.clearMemoryCache();
 ```
 
-**性能优势：**
-- 首次读取：从 IndexedDB 加载 → 约 1-5ms
-- 后续读取：直接从内存返回 → **约 0.01ms，快 100-500 倍**
+**Performance Benefits:**
+- First read: Load from IndexedDB → ~1-5ms
+- Subsequent reads: Return from memory → **~0.01ms, 100-500x faster**
 
-### 方式二：IndexedDBCachedFetch（HTTP 请求缓存）
+### Option 2: IndexedDBCachedFetch (HTTP Request Caching)
 
-自动缓存网络请求结果：
+Automatically cache network request results:
 
 ```javascript
-import { IndexedDBCachedFetch } from 'indexeddb-keyvalue';
+import { IndexedDBCachedFetch } from 'indexdb-cached-xhr';
 
-const cachedFetch = new IndexedDBCachedFetch('cacheDB', 'apiCache');  // 版本号不传则自动获取
+const cachedFetch = new CachedFetch('cacheDB', 'apiCache');
 
-// 第一次请求会访问网络并缓存结果
+// First request hits the network and caches the result
 const data = await cachedFetch.fetchJson('https://api.example.com/data');
 
-// 后续请求直接从 IndexedDB 读取，不访问网络
+// Subsequent requests read directly from IndexedDB, no network access
 const cachedData = await cachedFetch.fetchJson('https://api.example.com/data');
 
-// 支持其他响应类型
+// Support for other response types
 const text = await cachedFetch.fetchText('https://api.example.com/text');
 const blob = await cachedFetch.fetchBlob('https://api.example.com/image.png');
 const buffer = await cachedFetch.fetchArrayBuffer('https://api.example.com/binary');
 
-// 使用转换函数处理数据
+// Use converter function to process data
 const users = await cachedFetch.fetchJson('https://api.example.com/users', (data) => {
   return data.map(user => ({ ...user, fullName: `${user.firstName} ${user.lastName}` }));
 });
 ```
 
-### 方式三：工厂模式（多表共享连接）
+### Option 3: Factory Pattern (Multi-Table Shared Connection)
 
-多表场景下共享数据库连接，更节省资源：
+Share database connections in multi-table scenarios for better resource efficiency:
 
 ```javascript
-import { IndexDBStorageFactory } from 'indexeddb-keyvalue';
+import { StorageFactory } from 'indexdb-cached-xhr';
 
-// 获取存储实例（全局缓存，版本号不传则自动获取）
-const userStorage = IndexDBStorageFactory.getStorage('appDB', 'users');
-const orderStorage = IndexDBStorageFactory.getStorage('appDB', 'orders');
-const productStorage = IndexDBStorageFactory.getStorage('appDB', 'products');
+// Get storage instances (global caching)
+const userStorage = StorageFactory.getStorage('appDB', 'users');
+const orderStorage = StorageFactory.getStorage('appDB', 'orders');
+const productStorage = StorageFactory.getStorage('appDB', 'products');
 
-// 使用方式与 SimpleIndexDBStorage 相同
-await userStorage.saveItem('user1', { name: '张三' });
+// Usage same as SimpleIndexDBStorage
+await userStorage.saveItem('user1', { name: 'John' });
 await orderStorage.saveItem('order1', { total: 100 });
-await productStorage.saveItem('product1', { name: '商品A' });
+await productStorage.saveItem('product1', { name: 'Product A' });
 
-// 获取数据
+// Retrieve data
 const user = await userStorage.getItem('user1');
 const order = await orderStorage.getItem('order1');
 const product = await productStorage.getItem('product1');
 
-// 清除缓存（如需重新创建实例）
-IndexDBStorageFactory.clearCache('appDB', 'users');     // 清除指定表
-IndexDBStorageFactory.clearCache('appDB');               // 清除整个数据库
-IndexDBStorageFactory.clearAllCache();                   // 清除所有缓存
+// Clear cache (when recreating instances is needed)
+StorageFactory.clearCache('appDB', 'users');     // Clear specific table
+StorageFactory.clearCache('appDB');               // Clear entire database
+StorageFactory.clearAllCache();                   // Clear all caches
 ```
 
-### 方式四：底层 API（TinyIndexDB）
+### Option 4: Low-Level API (TinyIndexDB)
 
-需要更多控制时使用：
+Use when more control is needed:
 
 ```javascript
-import { TinyIndexDB } from 'indexeddb-keyvalue';
+import { TinyIndexDB } from 'indexdb-cached-xhr';
 
-// 创建实例（版本号不传则自动获取）
+// Create instance
 const db = new TinyIndexDB('myDatabase', 'id');
 
-// 初始化数据库（创建多个表）
+// Initialize database (create multiple tables)
 await db.initDB({
-  users: [['name', true], ['email', false]],     // [索引名, 是否唯一]
+  users: [['name', true], ['email', false]],     // [indexName, unique]
   orders: [['userId', false], ['status', false]]
 });
 
-// 批量保存数据
+// Batch save data
 await db.saveOrUpdate('users', [
-  { id: 'user1', name: '张三', email: 'zhangsan@example.com' },
-  { id: 'user2', name: '李四', email: 'lisi@example.com' }
+  { id: 'user1', name: 'John', email: 'john@example.com' },
+  { id: 'user2', name: 'Jane', email: 'jane@example.com' }
 ]);
 
-// 批量读取数据
+// Batch read data
 const users = await db.readData('users', ['user1', 'user2']);
 
-// 批量删除
+// Batch delete
 await db.delData('users', ['user1']);
 
-// 清空表
+// Clear table
 await db.clearTable('users');
 
-// 自定义事务
+// Custom transactions
 await db.withTable('users', async (database) => {
   const tx = database.transaction('users', 'readwrite');
   const store = tx.objectStore('users');
-  // 执行自定义操作...
+  // Execute custom operations...
 });
 ```
 
-## API 参考
+## API Reference
 
-### SimpleIndexDBStorage
+### CachedStorage
 
-| 方法 | 参数 | 返回值 | 说明 |
-|------|------|--------|------|
-| `saveItem(name, data)` | `name: string`, `data: any` | `Promise<void>` | 保存或更新数据（内存+IndexedDB） |
-| `getItem(name)` | `name: string` | `Promise<any>` | 获取数据（优先从内存读取） |
-| `deleteItem(name)` | `name: string` | `Promise<void>` | 删除数据（内存+IndexedDB） |
-| `clear()` | - | `Promise<void>` | 清空表（内存+IndexedDB） |
-| `clearMemoryCache()` | - | `void` | 仅清空内存缓存 |
-| `getMemoryCacheSize()` | - | `number` | 获取内存缓存条目数 |
+| Method | Parameters | Return | Description |
+|--------|-----------|--------|-------------|
+| `saveItem(name, data)` | `name: string`, `data: any` | `Promise<void>` | Save or update data (Memory + IndexedDB) |
+| `getItem(name)` | `name: string` | `Promise<any>` | Get data (priority from memory cache) |
+| `deleteItem(name)` | `name: string` | `Promise<void>` | Delete data (Memory + IndexedDB) |
+| `clear()` | - | `Promise<void>` | Clear table (Memory + IndexedDB) |
+| `clearMemoryCache()` | - | `void` | Clear only memory cache |
+| `getMemoryCacheSize()` | - | `number` | Get memory cache entry count |
 
-### IndexedDBCachedFetch
+### CachedFetch
 
-| 方法 | 参数 | 返回值 | 说明 |
-|------|------|--------|------|
-| `fetchJson(url, converter?)` | `url: string`, `converter?: (data) => any` | `Promise<T>` | 获取 JSON 数据 |
-| `fetchText(url, converter?)` | `url: string`, `converter?: (data) => string` | `Promise<string>` | 获取文本数据 |
-| `fetchBlob(url, converter?)` | `url: string`, `converter?: (data) => Blob` | `Promise<Blob>` | 获取 Blob 数据 |
-| `fetchArrayBuffer(url, converter?)` | `url: string`, `converter?: (data) => ArrayBuffer` | `Promise<ArrayBuffer>` | 获取二进制数据 |
+| Method | Parameters | Return | Description |
+|--------|-----------|--------|-------------|
+| `fetchJson(url, converter?)` | `url: string`, `converter?: (data) => any` | `Promise<T>` | Get JSON data |
+| `fetchText(url, converter?)` | `url: string`, `converter?: (data) => string` | `Promise<string>` | Get text data |
+| `fetchBlob(url, converter?)` | `url: string`, `converter?: (data) => Blob` | `Promise<Blob>` | Get Blob data |
+| `fetchArrayBuffer(url, converter?)` | `url: string`, `converter?: (data) => ArrayBuffer` | `Promise<ArrayBuffer>` | Get binary data |
 
-### IndexDBStorageFactory
+### StorageFactory
 
-| 方法 | 参数 | 返回值 | 说明 |
-|------|------|--------|------|
-| `getStorage(dbName, tableName)` | `dbName: string`, `tableName: string` | `IndexDBStorage` | 获取/创建存储实例 |
-| `clearCache(dbName, tableName?)` | `dbName: string`, `tableName?: string` | `void` | 清除指定缓存 |
-| `clearAllCache()` | - | `void` | 清除所有缓存 |
+| Method | Parameters | Return | Description |
+|--------|-----------|--------|-------------|
+| `getStorage(dbName, tableName)` | `dbName: string`, `tableName: string` | `IndexedDbStorage` | Get/create storage instance |
+| `clearCache(dbName, tableName?)` | `dbName: string`, `tableName?: string` | `void` | Clear specific cache |
+| `clearAllCache()` | - | `void` | Clear all caches |
 
-## 开发
+## Development
 
 ```bash
-# 安装依赖
+# Install dependencies
 npm install
 
-# 开发模式（启动本地服务器）
+# Development mode (start local server)
 npm run dev
 
-# 构建生产版本
+# Build production version
 npm run build
 
-# 构建开发版本
+# Build development version
 npm run build:dev
 ```
 
-## 浏览器兼容性
+## Browser Compatibility
 
 - Chrome/Edge 24+
 - Firefox 16+
@@ -214,6 +215,6 @@ npm run build:dev
 - iOS Safari 10+
 - Android Chrome 25+
 
-## 许可证
+## License
 
 MIT

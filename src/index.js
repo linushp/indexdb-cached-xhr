@@ -1,14 +1,14 @@
 import { TinyIndexDB } from './TinyIndexDB.js';
-import { IndexDBStorage } from './IndexDBStorage.js';
-import { IndexDBStorageFactory } from './IndexDBStorageFactory.js';
-import { SimpleIndexDBStorage } from './SimpleIndexDBStorage.js';
-import { IndexedDBCachedFetch } from './IndexedDBCachedFetch.js';
+import { IndexedDbStorage } from './IndexedDbStorage.js';
+import { StorageFactory } from './StorageFactory.js';
+import { CachedStorage } from './CachedStorage.js';
+import { CachedFetch } from './CachedFetch.js';
 
 export {
-    SimpleIndexDBStorage as default,
-    IndexedDBCachedFetch,
-    SimpleIndexDBStorage,
-    IndexDBStorage,
-    IndexDBStorageFactory,
+    CachedStorage as default,
+    CachedStorage,
+    CachedFetch,
+    IndexedDbStorage,
+    StorageFactory,
     TinyIndexDB
 };
