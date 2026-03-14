@@ -1,4 +1,4 @@
-# indexdb-cached-xhr
+# indexeddb-keyvalue
 
 A lightweight IndexedDB wrapper with dual-layer caching (Memory + IndexedDB), table management, CRUD operations, and HTTP request caching.
 
@@ -16,7 +16,7 @@ A lightweight IndexedDB wrapper with dual-layer caching (Memory + IndexedDB), ta
 
 ## Performance Comparison
 
-| Operation | Pure IndexedDB | indexdb-cached-xhr (Memory Cache) | Performance Boost |
+| Operation | Pure IndexedDB | indexeddb-keyvalue (Memory Cache) | Performance Boost |
 |-----------|---------------|----------------------------------|-------------------|
 | First Read | ~1-5ms | ~1-5ms | Same |
 | Subsequent Reads | ~1-5ms | **~0.01ms** | **100-500x** |
@@ -27,7 +27,7 @@ A lightweight IndexedDB wrapper with dual-layer caching (Memory + IndexedDB), ta
 ## Installation
 
 ```bash
-npm install indexdb-cached-xhr
+npm install indexeddb-keyvalue
 ```
 
 ## Usage
@@ -37,7 +37,7 @@ npm install indexdb-cached-xhr
 The simplest way to use it, with **built-in memory caching**, one line for high-performance data storage:
 
 ```javascript
-import { CachedStorage } from 'indexdb-cached-xhr';
+import { CachedStorage } from 'indexeddb-keyvalue';
 
 // Create storage instance (with dual-layer Memory + IndexedDB caching)
 const storage = new CachedStorage('myDB', 'myTable');
@@ -73,7 +73,7 @@ storage.clearMemoryCache();
 Automatically cache network request results:
 
 ```javascript
-import { IndexedDBCachedFetch } from 'indexdb-cached-xhr';
+import { IndexedDBCachedFetch } from 'indexeddb-keyvalue';
 
 const cachedFetch = new CachedFetch('cacheDB', 'apiCache');
 
@@ -99,7 +99,7 @@ const users = await cachedFetch.fetchJson('https://api.example.com/users', (data
 Share database connections in multi-table scenarios for better resource efficiency:
 
 ```javascript
-import { StorageFactory } from 'indexdb-cached-xhr';
+import { StorageFactory } from 'indexeddb-keyvalue';
 
 // Get storage instances (global caching)
 const userStorage = StorageFactory.getStorage('appDB', 'users');
@@ -127,7 +127,7 @@ StorageFactory.clearAllCache();                   // Clear all caches
 Use when more control is needed:
 
 ```javascript
-import { TinyIndexDB } from 'indexdb-cached-xhr';
+import { TinyIndexDB } from 'indexeddb-keyvalue';
 
 // Create instance
 const db = new TinyIndexDB('myDatabase', 'id');
