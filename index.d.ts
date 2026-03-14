@@ -68,6 +68,17 @@ export declare class TinyIndexDB {
    * 清空表
    */
   clearTable(tableName: string): Promise<void>;
+
+  /**
+   * 全局缓存：{ 'dbName': TinyIndexDB }
+   */
+  static _cache: Map<string, TinyIndexDB>;
+
+  /**
+   * 获取或创建 TinyIndexDB 实例（全局缓存）
+   * @param dbName - 数据库名
+   */
+  static getInstance(dbName: string): TinyIndexDB;
 }
 
 // ============================================
