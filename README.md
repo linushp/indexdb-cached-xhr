@@ -1,4 +1,4 @@
-# indexdb-cached-xhr
+# indexeddb-keyvalue
 
 轻量级 IndexedDB 封装库，提供表管理、CRUD 操作和 HTTP 请求缓存功能。
 
@@ -15,7 +15,7 @@
 
 ## 性能对比
 
-| 操作 | 纯 IndexedDB | indexdb-cached-xhr (内存缓存) | 性能提升 |
+| 操作 | 纯 IndexedDB | indexeddb-keyvalue (内存缓存) | 性能提升 |
 |------|-------------|------------------------------|---------|
 | 首次读取 | ~1-5ms | ~1-5ms | 持平 |
 | 重复读取 | ~1-5ms | **~0.01ms** | **100-500 倍** |
@@ -26,7 +26,7 @@
 ## 安装
 
 ```bash
-npm install indexdb-cached-xhr
+npm install indexeddb-keyvalue
 ```
 
 ## 使用方式
@@ -36,7 +36,7 @@ npm install indexdb-cached-xhr
 最简单的使用方式，**自带内存缓存**，一行代码搞定高性能数据存储：
 
 ```javascript
-import { SimpleIndexDBStorage } from 'indexdb-cached-xhr';
+import { SimpleIndexDBStorage } from 'indexeddb-keyvalue';
 
 // 创建存储实例（自带内存缓存 + IndexedDB 双层存储）
 const storage = new SimpleIndexDBStorage('myDB', 'myTable');
@@ -72,7 +72,7 @@ storage.clearMemoryCache();
 自动缓存网络请求结果：
 
 ```javascript
-import { IndexedDBCachedFetch } from 'indexdb-cached-xhr';
+import { IndexedDBCachedFetch } from 'indexeddb-keyvalue';
 
 const cachedFetch = new IndexedDBCachedFetch('cacheDB', 'apiCache');  // 版本号不传则自动获取
 
@@ -98,7 +98,7 @@ const users = await cachedFetch.fetchJson('https://api.example.com/users', (data
 多表场景下共享数据库连接，更节省资源：
 
 ```javascript
-import { IndexDBStorageFactory } from 'indexdb-cached-xhr';
+import { IndexDBStorageFactory } from 'indexeddb-keyvalue';
 
 // 获取存储实例（全局缓存，版本号不传则自动获取）
 const userStorage = IndexDBStorageFactory.getStorage('appDB', 'users');
@@ -126,7 +126,7 @@ IndexDBStorageFactory.clearAllCache();                   // 清除所有缓存
 需要更多控制时使用：
 
 ```javascript
-import { TinyIndexDB } from 'indexdb-cached-xhr';
+import { TinyIndexDB } from 'indexeddb-keyvalue';
 
 // 创建实例（版本号不传则自动获取）
 const db = new TinyIndexDB('myDatabase', 'id');
