@@ -22,7 +22,7 @@ A lightweight IndexedDB wrapper with dual-layer caching (Memory + IndexedDB), ta
 | Subsequent Reads | ~1-5ms | **~0.01ms** | **100-500x** |
 | Write | ~2-8ms | ~2-8ms (Memory + Persistence) | Reliable persistence |
 
-> Based on Chrome/Edge browser testing, actual performance varies by data size and device. SimpleIndexDBStorage automatically caches read data to memory, making subsequent access nearly instant.
+> Based on Chrome/Edge browser testing, actual performance varies by data size and device. CachedStorage automatically caches read data to memory, making subsequent access nearly instant.
 
 ## Installation
 
@@ -68,12 +68,12 @@ storage.clearMemoryCache();
 - First read: Load from IndexedDB → ~1-5ms
 - Subsequent reads: Return from memory → **~0.01ms, 100-500x faster**
 
-### Option 2: IndexedDBCachedFetch (HTTP Request Caching)
+### Option 2: CachedFetch (HTTP Request Caching)
 
 Automatically cache network request results:
 
 ```javascript
-import { IndexedDBCachedFetch } from 'indexeddb-keyvalue';
+import { CachedFetch } from 'indexeddb-keyvalue';
 
 const cachedFetch = new CachedFetch('cacheDB', 'apiCache');
 
@@ -106,7 +106,7 @@ const userStorage = StorageFactory.getStorage('appDB', 'users');
 const orderStorage = StorageFactory.getStorage('appDB', 'orders');
 const productStorage = StorageFactory.getStorage('appDB', 'products');
 
-// Usage same as SimpleIndexDBStorage
+// Usage same as CachedStorage
 await userStorage.saveItem('user1', { name: 'John' });
 await orderStorage.saveItem('order1', { total: 100 });
 await productStorage.saveItem('product1', { name: 'Product A' });
