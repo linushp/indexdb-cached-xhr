@@ -6,14 +6,23 @@ import { promisifyStore } from './utils/promisifyStore.js';
  */
 class TinyIndexDB {
 
-    constructor(dbName, keyPath, dbV) {
+    constructor(dbName, keyPath) {
         const indexDbApi = window.indexedDB || window.webkitIndexedDB || window.msIndexedDB || window.mozIndexedDB;
         this.dbName = dbName;
-        this.dbV = dbV;
+        this.dbV = null;  // dbV不需要外面传，内部自动获取
         this.indexDbApi = indexDbApi;
         this.keyPath = keyPath;
         this.tablesConfig = null;
         this._db = null;  // 缓存的数据库连接
+    }
+
+    /**
+     * 确保 dbV 已设置，未设置时自动获取当前版本
+     */
+    async _ensureDbVersion() {
+        if (this.dbV === undefined || this.dbV === null) {
+            this.dbV = await this._getCurrentVersion();
+        }
     }
 
     /**
@@ -23,24 +32,27 @@ class TinyIndexDB {
     async initDB(tables) {
         this.tablesConfig = { ...this.tablesConfig, ...tables };
         let tableNames = Object.keys(tables);
-        
+
+        // 确保版本号已设置
+        await this._ensureDbVersion();
+
         // 先打开数据库检查表是否存在
         let db = await this._openDBInternal();
-        
+
         // 检查是否所有表都存在
         let missingTables = tableNames.filter(name => !db.objectStoreNames.contains(name));
-        
+
         if (missingTables.length > 0) {
             // 有表不存在，需要升级版本号创建
             console.log('Missing tables:', missingTables.join(', '));
             db.close();
-            
+
             // 关闭缓存的连接，否则升级版本时会被阻塞
             if (this._db) {
                 this._db.close();
             }
             this._db = null;
-            
+
             // 升级版本号并重新打开
             this.dbV += 1;
             try {
@@ -65,14 +77,14 @@ class TinyIndexDB {
                 }
             }
         }
-        
+
         this._db = db;
         return db;
     }
 
     async _openDBInternal() {
         let self = this;
-        
+
         try {
             return await this._doOpenRaw();
         } catch (err) {
@@ -126,7 +138,7 @@ class TinyIndexDB {
 
     async _openDBAndCreateTables(tables) {
         let self = this;
-        
+
         try {
             return await this._doOpenAndCreate(tables);
         } catch (err) {
@@ -145,7 +157,7 @@ class TinyIndexDB {
         let self = this;
         let tableNames = Object.keys(tables);
         let tableIndexes = Object.values(tables);
-        
+
         return new Promise((resolve, reject) => {
             let req = self.indexDbApi.open(self.dbName, self.dbV);
             req.onerror = function (e) {
@@ -175,12 +187,15 @@ class TinyIndexDB {
      */
     async openDB() {
         let self = this;
-        
+
         // 如果已有连接且未关闭，直接返回
         if (this._db && !this._db.closed) {
             return this._db;
         }
-        
+
+        // 确保版本号已设置
+        await this._ensureDbVersion();
+
         try {
             return await this._doOpenDB();
         } catch (err) {
@@ -299,157 +314,4 @@ class TinyIndexDB {
 
 }
 
-/**
- * IndexDBStorageFactory - IndexedDB 存储工厂
- * 全局缓存 storage 实例，以 dbName + tableName 为维度
- */
-class IndexDBStorageFactory {
-
-    // 全局缓存：{ 'dbName:tableName': IndexDBStorage }
-    static _storageCache = new Map();
-    
-    // 全局缓存：{ 'dbName': TinyIndexDB }
-    static _tinyIndexDBCache = new Map();
-
-    /**
-     * 获取或创建 storage 实例
-     * @param {string} dbName - 数据库名
-     * @param {string} tableName - 表名
-     * @param {number} dbV - 数据库版本（可选，首次创建时使用）
-     * @returns {IndexDBStorage}
-     */
-    static getStorage(dbName, tableName, dbV = 1) {
-        const cacheKey = `${dbName}:${tableName}`;
-        
-        // 从缓存获取
-        if (this._storageCache.has(cacheKey)) {
-            return this._storageCache.get(cacheKey);
-        }
-        
-        // 创建新实例
-        const storage = new IndexDBStorage(dbName, tableName, dbV);
-        this._storageCache.set(cacheKey, storage);
-        
-        return storage;
-    }
-
-    /**
-     * 获取或创建 TinyIndexDB 实例
-     * @param {string} dbName - 数据库名
-     * @param {number} dbV - 数据库版本（可选）
-     * @returns {TinyIndexDB}
-     */
-    static getTinyIndexDB(dbName, dbV = 1) {
-        if (this._tinyIndexDBCache.has(dbName)) {
-            return this._tinyIndexDBCache.get(dbName);
-        }
-        
-        const tinyIndexDB = new TinyIndexDB(dbName, 'name', dbV);
-        this._tinyIndexDBCache.set(dbName, tinyIndexDB);
-        
-        return tinyIndexDB;
-    }
-
-    /**
-     * 清除指定缓存
-     * @param {string} dbName - 数据库名
-     * @param {string} tableName - 表名（可选，不传则清除整个数据库缓存）
-     */
-    static clearCache(dbName, tableName) {
-        if (tableName) {
-            this._storageCache.delete(`${dbName}:${tableName}`);
-        } else {
-            // 清除该数据库的所有表缓存
-            for (const key of this._storageCache.keys()) {
-                if (key.startsWith(`${dbName}:`)) {
-                    this._storageCache.delete(key);
-                }
-            }
-            this._tinyIndexDBCache.delete(dbName);
-        }
-    }
-
-    /**
-     * 清除所有缓存
-     */
-    static clearAllCache() {
-        this._storageCache.clear();
-        this._tinyIndexDBCache.clear();
-    }
-
-}
-
-/**
- * IndexDBStorage - 单表存储封装
- * 自动初始化表，提供 CRUD 操作
- */
-class IndexDBStorage {
-
-    constructor(dbName, tableName, dbV = 1) {
-        this.dbName = dbName;
-        this.tableName = tableName;
-        this.isInited = false;
-        
-        // 使用工厂获取共享的 TinyIndexDB 实例
-        this.tinyIndexDB = IndexDBStorageFactory.getTinyIndexDB(dbName, dbV);
-    }
-
-    /**
-     * 初始化表（如果不存在会自动创建）
-     */
-    async init() {
-        if (this.isInited) {
-            return;
-        }
-        
-        // 初始化表配置
-        const tablesConfig = {
-            [this.tableName]: [
-                ['name', true],
-                ['data', false]
-            ]
-        };
-        
-        await this.tinyIndexDB.initDB(tablesConfig);
-        this.isInited = true;
-    }
-
-    async saveItem(name, data) {
-        await this.init();
-        await this.tinyIndexDB.saveOrUpdate(this.tableName, [{name: name, data: data}]);
-    }
-
-    async addItem(name, data) {
-        await this.init();
-        await this.tinyIndexDB.addData(this.tableName, [{name: name, data: data}]);
-    }
-
-    async updateItem(name, data) {
-        await this.init();
-        await this.tinyIndexDB.updateData(this.tableName, [{name: name, data: data}]);
-    }
-
-    async deleteItem(name) {
-        await this.init();
-        await this.tinyIndexDB.delData(this.tableName, [name]);
-    }
-
-    async clear() {
-        await this.init();
-        await this.tinyIndexDB.clearTable(this.tableName);
-    }
-
-    async getItem(name) {
-        await this.init();
-        try {
-            let values = await this.tinyIndexDB.readData(this.tableName, [name]);
-            let value0 = values[0];
-            return value0 && value0.data;
-        } catch (e) {
-            console.log(e);
-            return null;
-        }
-    }
-}
-
-export { TinyIndexDB, IndexDBStorage, IndexDBStorageFactory };
+export { TinyIndexDB };

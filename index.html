@@ -98,8 +98,8 @@
         } from './src/index.js';
 
         // 使用工厂模式获取 storage 实例（全局缓存）
-        const simpleStorage = IndexDBStorageFactory.getStorage('test_db', 'test_table', 1);
-        const simpleStorage2 = IndexDBStorageFactory.getStorage('test_db', 'test_table2', 1);
+        const simpleStorage = IndexDBStorageFactory.getStorage('test_db', 'test_table');
+        const simpleStorage2 = IndexDBStorageFactory.getStorage('test_db', 'test_table2');
 
 
         const cachedFetch = new IndexedDBCachedFetch('fetch_db', 'cache_table');
@@ -263,8 +263,8 @@
         window.testMultiTable = async () => {
             try {
                 // 使用工厂模式获取多个表的 storage
-                const table1Storage = IndexDBStorageFactory.getStorage('multi_db', 'table1', 1);
-                const table2Storage = IndexDBStorageFactory.getStorage('multi_db', 'table2', 1);
+                const table1Storage = IndexDBStorageFactory.getStorage('multi_db', 'table1');
+                const table2Storage = IndexDBStorageFactory.getStorage('multi_db', 'table2');
 
                 await table1Storage.saveItem('key1', { data: 'table1 data' });
                 await table2Storage.saveItem('key2', { data: 'table2 data' });

@@ -17,11 +17,11 @@ export interface TableCallback<T> {
 
 export declare class TinyIndexDB {
   dbName: string;
-  dbV: number;
+  dbV: number | undefined;
   keyPath: string;
   tablesConfig: TableConfig | null;
 
-  constructor(dbName: string, keyPath: string, dbV: number);
+  constructor(dbName: string, keyPath: string, dbV?: number);
 
   /**
    * 初始化数据库，自动创建缺失的表
@@ -79,16 +79,14 @@ export declare class IndexDBStorageFactory {
    * 获取或创建 storage 实例（全局缓存）
    * @param dbName - 数据库名
    * @param tableName - 表名
-   * @param dbV - 数据库版本（可选，首次创建时使用）
    */
-  static getStorage(dbName: string, tableName: string, dbV?: number): IndexDBStorage;
+  static getStorage(dbName: string, tableName: string): IndexDBStorage;
 
   /**
    * 获取或创建 TinyIndexDB 实例（全局缓存）
    * @param dbName - 数据库名
-   * @param dbV - 数据库版本（可选）
    */
-  static getTinyIndexDB(dbName: string, dbV?: number): TinyIndexDB;
+  static getTinyIndexDB(dbName: string): TinyIndexDB;
 
   /**
    * 清除指定缓存
@@ -112,7 +110,7 @@ export declare class IndexDBStorage {
   tableName: string;
   tinyIndexDB: TinyIndexDB;
 
-  constructor(dbName: string, tableName: string, dbV?: number);
+  constructor(dbName: string, tableName: string);
 
   /**
    * 初始化表（如果不存在会自动创建）
@@ -157,9 +155,8 @@ export declare class IndexDBStorage {
 export declare class SimpleIndexDBStorage {
   dbName: string;
   tableName: string;
-  dbVersion: number;
 
-  constructor(dbName?: string, tableName?: string, dbVersion?: number);
+  constructor(dbName?: string, tableName?: string);
 
   /**
    * 保存条目
