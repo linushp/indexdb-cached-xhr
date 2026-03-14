@@ -10,9 +10,6 @@ class StorageFactory {
     // 全局缓存：{ 'dbName:tableName': IndexedDbStorage }
     static _storageCache = new Map();
 
-    // 全局缓存：{ 'dbName': TinyIndexDB }
-    static _tinyIndexDBCache = new Map();
-
     /**
      * 获取或创建 storage 实例
      * @param {string} dbName - 数据库名
@@ -40,14 +37,8 @@ class StorageFactory {
      * @returns {TinyIndexDB}
      */
     static getTinyIndexDB(dbName) {
-        if (this._tinyIndexDBCache.has(dbName)) {
-            return this._tinyIndexDBCache.get(dbName);
-        }
-
-        const tinyIndexDB = new TinyIndexDB(dbName, 'name');
-        this._tinyIndexDBCache.set(dbName, tinyIndexDB);
-
-        return tinyIndexDB;
+        // 使用 TinyIndexDB 的全局缓存
+        return TinyIndexDB.getInstance(dbName);
     }
 
     /**
@@ -65,7 +56,8 @@ class StorageFactory {
                     this._storageCache.delete(key);
                 }
             }
-            this._tinyIndexDBCache.delete(dbName);
+            // 清除 TinyIndexDB 的全局缓存
+            TinyIndexDB._cache.delete(dbName);
         }
     }
 
@@ -74,7 +66,7 @@ class StorageFactory {
      */
     static clearAllCache() {
         this._storageCache.clear();
-        this._tinyIndexDBCache.clear();
+        TinyIndexDB._cache.clear();
     }
 
 }

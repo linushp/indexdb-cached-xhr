@@ -312,6 +312,25 @@ class TinyIndexDB {
         });
     }
 
+    /**
+     * 全局缓存：{ 'dbName': TinyIndexDB }
+     */
+    static _cache = new Map();
+
+    /**
+     * 获取或创建 TinyIndexDB 实例（全局缓存）
+     * @param {string} dbName - 数据库名
+     * @returns {TinyIndexDB}
+     */
+    static getInstance(dbName) {
+        if (TinyIndexDB._cache.has(dbName)) {
+            return TinyIndexDB._cache.get(dbName);
+        }
+        const instance = new TinyIndexDB(dbName, 'name');
+        TinyIndexDB._cache.set(dbName, instance);
+        return instance;
+    }
+
 }
 
 export { TinyIndexDB };

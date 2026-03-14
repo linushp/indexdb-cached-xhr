@@ -11,8 +11,8 @@ class IndexedDbStorage {
         this.tableName = tableName;
         this.isInited = false;
 
-        // 直接使用 TinyIndexDB，版本号自动获取
-        this.tinyIndexDB = new TinyIndexDB(dbName, 'name');
+        // 使用全局缓存获取共享的 TinyIndexDB 实例，确保同一个数据库共享版本管理
+        this.tinyIndexDB = TinyIndexDB.getInstance(dbName);
     }
 
     /**
