@@ -4,7 +4,7 @@ A lightweight IndexedDB wrapper with dual-layer caching (Memory + IndexedDB), ta
 
 ## Features
 
-- **Ultra Small** - Only **~3KB** gzipped, zero dependencies, extremely lightweight
+- **Ultra Small** - Only **~1KB** gzipped, zero dependencies, extremely lightweight
 - **Dual-Layer Caching** - **Memory + IndexedDB**, subsequent reads return directly from memory, 100-500x performance boost
 - Automatic Version Management - No manual database upgrades needed
 - Automatic Table Creation - Tables are created automatically when used
