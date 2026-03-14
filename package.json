@@ -1,33 +1,43 @@
 {
   "name": "indexdb-cached-xhr",
-  "version": "1.0.2",
-  "description": "",
+  "version": "1.0.3",
+  "description": "Lightweight IndexedDB wrapper with table management, CRUD operations, and HTTP request caching",
   "main": "dist/index.js",
+  "types": "index.d.ts",
+  "files": [
+    "dist/",
+    "src/",
+    "index.d.ts",
+    "README.md"
+  ],
   "scripts": {
-    "start": "webpack-dev-server",
-    "build": "rm -rf dist/ && NODE_ENV=production webpack"
+    "dev": "webpack serve --mode development",
+    "build": "rm -rf dist/ && webpack --mode production",
+    "build:dev": "webpack --mode development"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/linushp/indexdb-cached-xhr.git"
   },
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "indexeddb",
+    "cache",
+    "storage",
+    "browser",
+    "fetch",
+    "xhr",
+    "localstorage",
+    "database"
+  ],
+  "author": "linushp",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/linushp/indexdb-cached-xhr/issues"
   },
+  "homepage": "https://github.com/linushp/indexdb-cached-xhr#readme",
   "devDependencies": {
-    "@babel/core": "^7.5.5",
-    "@babel/plugin-proposal-class-properties": "^7.5.5",
-    "@babel/plugin-proposal-object-rest-spread": "^7.5.5",
-    "@babel/plugin-syntax-dynamic-import": "^7.2.0",
-    "@babel/preset-env": "^7.1.0",
-    "babel-loader": "^8.0.6",
-    "babel-plugin-transform-async-to-promises": "^0.8.14",
-    "clean-webpack-plugin": "^3.0.0",
-    "webpack": "^4.39.1",
-    "webpack-cli": "^3.3.6",
-    "webpack-dev-server": "^3.7.2"
-  },
-  "homepage": "https://github.com/linushp/indexdb-cached-xhr#readme"
+    "webpack": "^5.90.0",
+    "webpack-cli": "^5.1.4",
+    "webpack-dev-server": "^5.0.4"
+  }
 }

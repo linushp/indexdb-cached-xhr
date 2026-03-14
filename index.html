@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IndexedDB Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .test-section h3 {
+            margin-top: 0;
+        }
+
+        button {
+            margin: 5px;
+            padding: 8px 15px;
+            cursor: pointer;
+        }
+
+        .log {
+            background: #f5f5f5;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 3px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .success {
+            color: green;
+        }
+
+        .error {
+            color: red;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>IndexedDB Wrapper Test</h1>
+
+    <div class="test-section">
+        <h3>SimpleIndexDBStorage Test</h3>
+        <button onclick="testSave()">Save Item</button>
+        <button onclick="testGet()">Get Item</button>
+        <button onclick="testDelete()">Delete Item</button>
+        <button onclick="testClear()">Clear Table</button>
+        <br>
+        <br>
+
+        <button onclick="testSaveObject()">Save Complex Object</button>
+        <button onclick="testGetObject()">Get Complex Object</button>
+        <br>
+        
+        <h3>SimpleIndexDBStorage Test2</h3>
+        <button onclick="testSave2()">Save Item</button>
+        <button onclick="testGet2()">Get Item</button>
+
+        <br>
+        <button onclick="simulateTableDelete()" style="background:#ffcccc">Simulate Delete Table</button>
+        <button onclick="testSaveAfterDelete()" style="background:#ccffcc">Save After Delete</button>
+        <div id="simpleLog" class="log"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>IndexedDBCachedFetch Test</h3>
+        <button onclick="testFetchJson()">Fetch JSON</button>
+        <button onclick="testFetchText()">Fetch Text</button>
+        <div id="fetchLog" class="log"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>IndexDBStorage (Multi-table) Test</h3>
+        <button onclick="testMultiTable()">Test Multi-Table</button>
+        <div id="multiLog" class="log"></div>
+    </div>
+
+    <script type="module">
+        import {
+            SimpleIndexDBStorage,
+            IndexedDBCachedFetch,
+            IndexDBStorageFactory
+        } from './src/index.js';
+
+        // 使用工厂模式获取 storage 实例（全局缓存）
+        const simpleStorage = IndexDBStorageFactory.getStorage('test_db', 'test_table', 1);
+        const simpleStorage2 = IndexDBStorageFactory.getStorage('test_db', 'test_table2', 1);
+
+
+        const cachedFetch = new IndexedDBCachedFetch('fetch_db', 'cache_table');
+
+        window.simpleStorage = simpleStorage;
+        window.simpleStorage2 = simpleStorage2;
+        window.cachedFetch = cachedFetch;
+
+        function log(elementId, message, isError = false) {
+            console.log(elementId, message, isError);
+            const el = document.getElementById(elementId);
+            const className = isError ? 'error' : 'success';
+            el.innerHTML += `<span class="${className}">${new Date().toLocaleTimeString()}: ${message}</span>\n`;
+            el.scrollTop = el.scrollHeight;
+        }
+
+        window.testSave = async () => {
+            try {
+                await simpleStorage.saveItem('testKey', { name: 'test', value: 123 + Math.random() });
+                log('simpleLog', 'Save successful: testKey');
+            } catch (e) {
+                console.error(e);
+                log('simpleLog', 'Save failed: ' + e.message, true);
+            }
+        };
+
+
+        window.testSave2 = async () => {
+            try {
+                
+                await simpleStorage2.saveItem('testKey', { name: 'test', value: 123 + Math.random() });
+                log('simpleLog', 'Save successful: testKey');
+            } catch (e) {
+                console.error(e);
+                log('simpleLog', 'Save failed: ' + e.message, true);
+            }
+        };
+
+        window.testSaveObject = async () => {
+            try {
+                const complexObject = {
+                    id: 1,
+                    name: 'John Doe',
+                    email: 'john@example.com',
+                    tags: ['developer', 'javascript', 'web'],
+                    profile: {
+                        age: 30,
+                        city: 'Beijing',
+                        settings: {
+                            theme: 'dark',
+                            notifications: true
+                        }
+                    },
+                    createdAt: new Date().toISOString(),
+                    scores: [95, 87, 92],
+                    metadata: {
+                        version: '1.0',
+                        source: 'test'
+                    }
+                };
+                await simpleStorage.saveItem('complexKey', complexObject);
+                log('simpleLog', 'Save object successful: complexKey');
+            } catch (e) {
+                log('simpleLog', 'Save object failed: ' + e.message, true);
+            }
+        };
+
+        window.testGetObject = async () => {
+            try {
+                const data = await simpleStorage.getItem('complexKey');
+                log('simpleLog', 'Get object result:\n' + JSON.stringify(data, null, 2));
+            } catch (e) {
+                log('simpleLog', 'Get object failed: ' + e.message, true);
+            }
+        };
+
+        window.simulateTableDelete = async () => {
+            try {
+                log('simpleLog', 'Deleting database to simulate table loss...');
+                await new Promise((resolve, reject) => {
+                    const req = indexedDB.deleteDatabase('test_db');
+                    req.onsuccess = () => resolve();
+                    req.onerror = () => reject(req.error);
+                });
+                log('simpleLog', 'Database deleted. Page will reload to clear connections...');
+                setTimeout(() => location.reload(), 1500);
+            } catch (e) {
+                log('simpleLog', 'Delete failed: ' + e.message, true);
+            }
+        };
+
+        window.testSaveAfterDelete = async () => {
+            try {
+                await simpleStorage.saveItem('recoveryKey', { message: 'Data saved after table recreation!' });
+                log('simpleLog', 'Save after delete successful: recoveryKey');
+                const data = await simpleStorage.getItem('recoveryKey');
+                log('simpleLog', 'Verification: ' + JSON.stringify(data));
+            } catch (e) {
+                log('simpleLog', 'Save after delete failed: ' + e.message, true);
+            }
+        };
+
+        window.testGet = async () => {
+            try {
+                const data = await simpleStorage.getItem('testKey');
+                log('simpleLog', 'Get result: ' + JSON.stringify(data));
+            } catch (e) {
+                log('simpleLog', 'Get failed: ' + e.message, true);
+            }
+        };
+
+
+        window.testGet2 = async () => {
+            try {
+                const data = await simpleStorage2.getItem('testKey');
+                log('simpleLog', 'Get result: ' + JSON.stringify(data));
+            } catch (e) {
+                log('simpleLog', 'Get failed: ' + e.message, true);
+            }
+        };
+
+        window.testDelete = async () => {
+            try {
+                await simpleStorage.deleteItem('testKey');
+                log('simpleLog', 'Delete successful: testKey');
+            } catch (e) {
+                log('simpleLog', 'Delete failed: ' + e.message, true);
+            }
+        };
+
+        window.testClear = async () => {
+            try {
+                await simpleStorage.clear();
+                log('simpleLog', 'Clear successful');
+            } catch (e) {
+                log('simpleLog', 'Clear failed: ' + e.message, true);
+            }
+        };
+
+        window.testFetchJson = async () => {
+            try {
+                log('fetchLog', 'Fetching JSON...');
+                // Using a public test API
+                const data = await cachedFetch.fetchJson('https://jsonplaceholder.typicode.com/posts/1');
+                log('fetchLog', 'Fetch result: ' + JSON.stringify(data).substring(0, 100) + '...');
+            } catch (e) {
+                log('fetchLog', 'Fetch failed: ' + e.message, true);
+            }
+        };
+
+        window.testFetchText = async () => {
+            try {
+                log('fetchLog', 'Fetching text...');
+                const data = await cachedFetch.fetchText('https://httpbin.org/get');
+                log('fetchLog', 'Fetch result: ' + data.substring(0, 100) + '...');
+            } catch (e) {
+                log('fetchLog', 'Fetch failed: ' + e.message, true);
+            }
+        };
+
+        window.testMultiTable = async () => {
+            try {
+                // 使用工厂模式获取多个表的 storage
+                const table1Storage = IndexDBStorageFactory.getStorage('multi_db', 'table1', 1);
+                const table2Storage = IndexDBStorageFactory.getStorage('multi_db', 'table2', 1);
+
+                await table1Storage.saveItem('key1', { data: 'table1 data' });
+                await table2Storage.saveItem('key2', { data: 'table2 data' });
+
+                const data1 = await table1Storage.getItem('key1');
+                const data2 = await table2Storage.getItem('key2');
+
+                log('multiLog', 'Table1 data: ' + JSON.stringify(data1));
+                log('multiLog', 'Table2 data: ' + JSON.stringify(data2));
+            } catch (e) {
+                log('multiLog', 'Multi-table test failed: ' + e.message, true);
+            }
+        };
+
+        log('simpleLog', 'Test page loaded. Click buttons to run tests.');
+    </script>
+</body>
+
+</html>
